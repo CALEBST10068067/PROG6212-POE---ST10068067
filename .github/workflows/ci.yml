@@ -1,0 +1,62 @@
+name: Validate Repository Structure
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-docs-folder:
+    name: Verify /docs and Planning Artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate /docs Folder Exists
+        run: |
+          if [ -d "docs" ]; then
+            echo "SUCCESS: /docs directory exists."
+          else
+            echo "ERROR: /docs directory does not exist in repository root!"
+            exit 1
+          fi
+
+      - name: Validate Required Planning Deliverables
+        run: |
+          FAILED=0
+
+          # 1. Check for ERD diagram (accepts png or pdf)
+          if [ -f "docs/ERD.png" ] || [ -f "docs/ERD.pdf" ]; then
+            echo "PASS: ERD diagram file found in /docs."
+          else
+            echo "FAIL: Missing ERD file (expected docs/ERD.png or docs/ERD.pdf)."
+            FAILED=1
+          fi
+
+          # 2. Check for API Endpoint Plan (accepts md or pdf)
+          if [ -f "docs/endpoint_plan.md" ] || [ -f "docs/endpoint_plan.pdf" ]; then
+            echo "PASS: Endpoint plan found in /docs."
+          else
+            echo "FAIL: Missing endpoint plan (expected docs/endpoint_plan.md or docs/endpoint_plan.pdf)."
+            FAILED=1
+          fi
+
+          # 3. Check for SQL database script (.sql file)
+          if [ -f "docs/raceday_schema.sql" ]; then
+            echo "PASS: SQL script found at docs/raceday_schema.sql."
+          else
+            echo "FAIL: Missing SQL schema script (expected docs/raceday_schema.sql)."
+            FAILED=1
+          fi
+
+          # Terminate step if any file check failed
+          if [ $FAILED -ne 0 ]; then
+            echo "One or more required planning deliverables are missing from /docs."
+            exit 1
+          fi
+
+      - name: All Checks Passed
+        run: echo "Repository structure and all Part 1 planning files validated successfully!"
